@@ -61,13 +61,12 @@
 	  
     // use jquery to load GeoJSON data
 
-         $.getJSON("RamallahZones.json", function(RZ) {
-         L.geoJson(RZ).addTo(map);
-         });
-
+    	$.getJSON("RamallahZones.json", function(RZ) {
+     L.geoJson(RZ).addTo(map);
+     });
          $.getJSON("wasteContainer.json", function(WC) {
-         L.geoJson(WC).addTo(map);
-    });
+       L.geoJson(WC).addTo(map);
+     });
 
 
 
@@ -76,3 +75,4 @@
 
 
 </html>
+
