@@ -1,127 +1,106 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
-
-  <!-- Give the page a title -->
   <title>Ramallah Waste Containers</title>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
-
   <style>
-    body {
-      margin: 0px;
-      height: 100%;
-      width: 100%;
-    }
-
-    #map {
-      position: absolute;
-      width: 100%;
-      top: 0px;
-      bottom: 0;
-    }
-
-    /* ✅ Date/Time box style */
-    #date-time {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 18px;
-      color: white;
-      background-color: rgba(0, 0, 0, 0.5);
-      padding: 6px 10px;
-      border-radius: 8px;
-      z-index: 1000;
-      font-family: Arial, sans-serif;
+    body { margin: 0; height: 100%; width: 100%; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    /* صندوق التاريخ والوقت */
+    #date-time{
+      position:absolute; top:10px; right:10px;
+      font-family: Arial, sans-serif; font-size:18px;
+      color:#fff; background:rgba(0,0,0,.5);
+      padding:6px 10px; border-radius:8px;
+      z-index:1000; /* أعلى من الخريطة */
+      pointer-events:none; /* ما يعطّل سحب الخريطة */
     }
   </style>
 </head>
-
 <body>
 
-  <!-- the map -->
   <div id="map"></div>
-
-  <!-- ✅ Date/Time -->
+  <!-- التاريخ والوقت -->
   <div id="date-time"></div>
 
   <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
   <script>
-    const mapOptions = {
+    // إعداد الخريطة
+    const map = L.map('map', {
       zoomSnap: 0.5,
       center: [31.9045, 35.2045],
-      zoom: 17.5,
-    };
+      zoom: 17.5
+    });
 
-    const map = L.map("map", mapOptions);
-
+    // خريطة خلفية
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors & CARTO',
+      attribution: '&copy; OpenStreetMap & CARTO',
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(map);
 
-    // Load Zones
-    $.getJSON("RamallahZones.json", function (RZ) {
-      window.zonesLayer = L.geoJson(RZ, {
+    // نعمل كنترول فارغ أولاً، وبعدين نضيف الطبقات لما تجهز
+    const layerControl = L.control.layers({}, {}).addTo(map);
+
+    // ----- طبقة مناطق رام الله (Polygon) -----
+    $.getJSON('RamallahZones.json', function (RZ) {
+      const zonesLayer = L.geoJson(RZ, {
         style: function (feature) {
           return {
-            fillColor: "yellow",
+            fillColor: 'yellow',
             fillOpacity: 0.3,
-            color: "yellow",
-            weight: 1.0,
+            color: 'yellow',
+            weight: 1,
             opacity: 0.7
           };
         },
         onEachFeature: function (feature, layer) {
+          // إذا عندك NAME_ENGLI بدال NAME بدّليها هون
+          const name = feature.properties.NAME ?? feature.properties.NAME_ENGLI ?? 'Unknown';
           layer.on('click', function () {
-            alert("Zone Name: " + feature.properties.NAME);
+            alert('Zone Name: ' + name);
           });
         }
-      }).addTo(map);
+      }).addTo(map); // نعرضها افتراضياً
+
+      // نضيفها للكنترول بعد ما تتكوّن
+      layerControl.addOverlay(zonesLayer, 'Zones');
     });
 
-    // Load Waste Containers
-    $.getJSON("wasteContainer.json", function (WC) {
-      window.wasteContainersLayer = L.geoJson(WC, {
+    // ----- طبقة الحاويات (Point) -----
+    $.getJSON('wasteContainer.json', function (WC) {
+      const wasteContainersLayer = L.geoJson(WC, {
         pointToLayer: function (feature, latlng) {
           return L.circleMarker(latlng, {
             radius: 5,
-            fillColor: "orange",
-            color: "orange",
+            fillColor: 'orange',
+            color: 'orange',
             weight: 1,
             opacity: 1,
             fillOpacity: 0.8
           });
+        },
+        onEachFeature: function (feature, layer) {
+          // ممكن تضيفي popup لاحقاً
         }
-      }).addTo(map);
+      }).addTo(map); // نعرضها افتراضياً
+
+      // نضيفها للكنترول
+      layerControl.addOverlay(wasteContainersLayer, 'Waste Containers');
     });
 
-    // ✅ Layer control
-    const baseLayers = {};
-    const overlays = {
-      "Zones": window.zonesLayer,
-      "Waste Containers": window.wasteContainersLayer
-    };
-
-    L.control.layers(baseLayers, overlays).addTo(map);
-
-    // ✅ Date & Time function
-    function updateDateTime() {
+    // ----- التاريخ والوقت -----
+    function updateDateTime(){
       const now = new Date();
-      document.getElementById("date-time").innerHTML =
-        now.toLocaleDateString() + " " + now.toLocaleTimeString();
+      const ds = now.toLocaleDateString();
+      const ts = now.toLocaleTimeString();
+      document.getElementById('date-time').textContent = ds + ' ' + ts;
     }
-
     updateDateTime();
     setInterval(updateDateTime, 1000);
   </script>
-
 </body>
-
 </html>
